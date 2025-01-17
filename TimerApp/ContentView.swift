@@ -14,6 +14,7 @@ struct ContentView: View {
   @State private var isRunning: Bool = false
   @State private var timer: Timer? = nil
   @State private var pickerValue: TimeInterval = 30 * 60 // Sync with default time
+  @State private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
   var body: some View {
     VStack(spacing: 20) {
@@ -57,6 +58,9 @@ struct ContentView: View {
     }
     .padding()
     .background(Color.white.edgesIgnoringSafeArea(.all))
+    .onDisappear {
+      endBackgroundTask()
+    }
   }
 
   private func startTimer() {
@@ -64,6 +68,10 @@ struct ContentView: View {
       timeRemaining = pickerValue
     }
     isRunning = true
+
+    // Start background task
+    startBackgroundTask()
+
     timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
       if timeRemaining > 0 {
         timeRemaining -= 1
@@ -72,6 +80,7 @@ struct ContentView: View {
         timer = nil
         isRunning = false
         playAlertSound()
+        endBackgroundTask()
       }
     }
   }
@@ -80,21 +89,42 @@ struct ContentView: View {
     timer?.invalidate()
     timer = nil
     isRunning = false
+    endBackgroundTask()
   }
 
     private func playAlertSound() {
-      guard let soundURL = Bundle.main.url(forResource: "alertSound", withExtension: "wav") else {
-        print("Sound file not found")
-        return
-      }
+        guard let soundURL = Bundle.main.url(forResource: "alertSound", withExtension: "wav") else {
+            print("Sound file not found")
+            return
+        }
 
-      do {
-        audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
-        audioPlayer?.play()
-      } catch {
-        print("Error playing sound: \(error.localizedDescription)")
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            
+            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            audioPlayer?.prepareToPlay()
+            audioPlayer?.play()
+        } catch {
+            print("Error playing sound: \(error.localizedDescription)")
+        }
+    }
+
+  private func startBackgroundTask() {
+    if backgroundTask == .invalid {
+      backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "TimerTask") {
+        endBackgroundTask()
       }
     }
+  }
+
+  private func endBackgroundTask() {
+    if backgroundTask != .invalid {
+      UIApplication.shared.endBackgroundTask(backgroundTask)
+      backgroundTask = .invalid
+    }
+  }
 
   private func formatTime(_ seconds: TimeInterval) -> String {
     let minutes = Int(seconds) / 60
