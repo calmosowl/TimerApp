@@ -18,6 +18,7 @@ struct ContentView: View {
 
   var body: some View {
     VStack(spacing: 20) {
+
       // Countdown display
       Text(formatTime(timeRemaining))
         .font(.system(size: 68, weight: .bold, design: .monospaced))
@@ -75,6 +76,7 @@ struct ContentView: View {
     timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
       if timeRemaining > 0 {
         timeRemaining -= 1
+        print(timeRemaining)
       } else {
         timer?.invalidate()
         timer = nil
@@ -93,38 +95,50 @@ struct ContentView: View {
   }
 
     private func playAlertSound() {
-        guard let soundURL = Bundle.main.url(forResource: "alertSound", withExtension: "wav") else {
-            print("Sound file not found")
-            return
-        }
-
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-            
-            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
-            audioPlayer?.prepareToPlay()
-            audioPlayer?.play()
-        } catch {
-            print("Error playing sound: \(error.localizedDescription)")
-        }
+          AudioServicesPlaySystemSound(1005)
+//        guard let soundURL = Bundle.main.url(forResource: "alertSound", withExtension: "wav") else {
+//            print("Sound file not found 1")
+//            return
+//        }
+//
+//        do {
+//            let audioSession = AVAudioSession.sharedInstance()
+//            try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+//            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+//
+//            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+//            audioPlayer?.prepareToPlay()
+//            audioPlayer?.play()
+//        } catch {
+//            print("Error playing sound: \(error.localizedDescription)")
+//        }
     }
 
-  private func startBackgroundTask() {
-    if backgroundTask == .invalid {
-      backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "TimerTask") {
-        endBackgroundTask()
+    private func requestNotificationPermission() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+            if granted {
+                print("Notification permission granted.")
+            } else {
+                print("Notification permission denied.")
+            }
+        }
+    }
+    
+    private func startBackgroundTask() {
+      if backgroundTask == .invalid {
+        backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "TimerTask") {
+          endBackgroundTask()
+        }
       }
     }
-  }
 
-  private func endBackgroundTask() {
-    if backgroundTask != .invalid {
-      UIApplication.shared.endBackgroundTask(backgroundTask)
-      backgroundTask = .invalid
+    private func endBackgroundTask() {
+      if backgroundTask != .invalid {
+        UIApplication.shared.endBackgroundTask(backgroundTask)
+        backgroundTask = .invalid
+      }
     }
-  }
 
   private func formatTime(_ seconds: TimeInterval) -> String {
     let minutes = Int(seconds) / 60
