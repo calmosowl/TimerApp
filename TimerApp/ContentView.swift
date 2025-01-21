@@ -6,15 +6,14 @@
 //
 
 import SwiftUI
-import AVFoundation
+import UserNotifications
 
 struct ContentView: View {
-  @State private var audioPlayer: AVAudioPlayer?
-  @State private var timeRemaining: TimeInterval = 30 * 60 // Default to 30 minutes
+  @State private var pickerValue: TimeInterval = 30 * 60 // Default: 30 minutes
+  @State private var timeRemaining: TimeInterval = 30 * 60
   @State private var isRunning: Bool = false
+  @State private var endDate: Date? = nil
   @State private var timer: Timer? = nil
-  @State private var pickerValue: TimeInterval = 30 * 60 // Sync with default time
-  @State private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
   var body: some View {
     VStack(spacing: 20) {
@@ -59,31 +58,25 @@ struct ContentView: View {
     }
     .padding()
     .background(Color.white.edgesIgnoringSafeArea(.all))
+    .onAppear {
+      requestNotificationPermission()
+    }
     .onDisappear {
-      endBackgroundTask()
+      pauseTimer()
     }
   }
 
   private func startTimer() {
-    if timeRemaining <= 0 {
-      timeRemaining = pickerValue
-    }
+    // Calculate the end date
+    endDate = Date().addingTimeInterval(pickerValue)
     isRunning = true
 
-    // Start background task
-    startBackgroundTask()
+    // Schedule local notification
+    scheduleNotification()
 
+    // Start UI update timer
     timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-      if timeRemaining > 0 {
-        timeRemaining -= 1
-        print(timeRemaining)
-      } else {
-        timer?.invalidate()
-        timer = nil
-        isRunning = false
-        playAlertSound()
-        endBackgroundTask()
-      }
+      updateRemainingTime()
     }
   }
 
@@ -91,54 +84,54 @@ struct ContentView: View {
     timer?.invalidate()
     timer = nil
     isRunning = false
-    endBackgroundTask()
+    endDate = nil
+
+    // Cancel pending notifications
+    UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
   }
 
-    private func playAlertSound() {
-          AudioServicesPlaySystemSound(1005)
-//        guard let soundURL = Bundle.main.url(forResource: "alertSound", withExtension: "wav") else {
-//            print("Sound file not found 1")
-//            return
-//        }
-//
-//        do {
-//            let audioSession = AVAudioSession.sharedInstance()
-//            try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-//            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-//
-//            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
-//            audioPlayer?.prepareToPlay()
-//            audioPlayer?.play()
-//        } catch {
-//            print("Error playing sound: \(error.localizedDescription)")
-//        }
-    }
+  private func updateRemainingTime() {
+    guard let endDate = endDate else { return }
 
-    private func requestNotificationPermission() {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
-            if granted {
-                print("Notification permission granted.")
-            } else {
-                print("Notification permission denied.")
-            }
-        }
+    let now = Date()
+    if now >= endDate {
+      timeRemaining = 0
+      timer?.invalidate()
+      timer = nil
+      isRunning = false
+    } else {
+      timeRemaining = endDate.timeIntervalSince(now)
     }
-    
-    private func startBackgroundTask() {
-      if backgroundTask == .invalid {
-        backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "TimerTask") {
-          endBackgroundTask()
-        }
+  }
+
+  private func scheduleNotification() {
+    guard let endDate = endDate else { return }
+
+    let content = UNMutableNotificationContent()
+    content.title = "Timer Finished"
+    content.body = "Your timer has ended."
+    content.sound = UNNotificationSound.default
+
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: endDate.timeIntervalSinceNow, repeats: false)
+    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+    UNUserNotificationCenter.current().add(request) { error in
+      if let error = error {
+        print("Error scheduling notification: \(error.localizedDescription)")
       }
     }
+  }
 
-    private func endBackgroundTask() {
-      if backgroundTask != .invalid {
-        UIApplication.shared.endBackgroundTask(backgroundTask)
-        backgroundTask = .invalid
+  private func requestNotificationPermission() {
+    let center = UNUserNotificationCenter.current()
+    center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+      if granted {
+        print("Notification permission granted.")
+      } else {
+        print("Notification permission denied.")
       }
     }
+  }
 
   private func formatTime(_ seconds: TimeInterval) -> String {
     let minutes = Int(seconds) / 60

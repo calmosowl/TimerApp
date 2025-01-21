@@ -4,8 +4,8 @@
 <dict>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>processing</string>
 		<string>audio</string>
+    <string>background-fetch</string>
 	</array>
 </dict>
 </plist>
