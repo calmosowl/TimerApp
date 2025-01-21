@@ -27,9 +27,6 @@
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		ACC47BAF2D3A757800182720 /* Exceptions for "TimerApp" folder in "TimerApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			assetTagsByRelativePath = {
-				alertSound.wav = (New, );
-			};
 			membershipExceptions = (
 				Info.plist,
 			);
@@ -287,7 +284,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"TimerApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "TimerApp/handpan-converted.wav TimerApp/Preview\\ Content";
 				DEVELOPMENT_TEAM = H6P8L35992;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -319,7 +316,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"TimerApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "TimerApp/handpan-converted.wav TimerApp/Preview\\ Content";
 				DEVELOPMENT_TEAM = H6P8L35992;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

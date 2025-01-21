@@ -58,9 +58,6 @@ struct ContentView: View {
     }
     .padding()
     .background(Color.white.edgesIgnoringSafeArea(.all))
-    .onAppear {
-      requestNotificationPermission()
-    }
     .onDisappear {
       pauseTimer()
     }
@@ -105,32 +102,27 @@ struct ContentView: View {
   }
 
   private func scheduleNotification() {
-    guard let endDate = endDate else { return }
+      guard let endDate = endDate else { return }
 
-    let content = UNMutableNotificationContent()
-    content.title = "Timer Finished"
-    content.body = "Your timer has ended."
-    content.sound = UNNotificationSound.default
-
-    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: endDate.timeIntervalSinceNow, repeats: false)
-    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-
-    UNUserNotificationCenter.current().add(request) { error in
-      if let error = error {
-        print("Error scheduling notification: \(error.localizedDescription)")
-      }
-    }
-  }
-
-  private func requestNotificationPermission() {
-    let center = UNUserNotificationCenter.current()
-    center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-      if granted {
-        print("Notification permission granted.")
+      let content = UNMutableNotificationContent()
+      content.title = "Timer Finished"
+      content.body = "Your timer has ended."
+      
+      // Custom sound
+      if let soundURL = Bundle.main.url(forResource: "handpan-converted", withExtension: "wav") {
+        content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundURL.lastPathComponent))
       } else {
-        print("Notification permission denied.")
+        content.sound = UNNotificationSound.default
       }
-    }
+
+      let trigger = UNTimeIntervalNotificationTrigger(timeInterval: endDate.timeIntervalSinceNow, repeats: false)
+      let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+      UNUserNotificationCenter.current().add(request) { error in
+        if let error = error {
+          print("Error scheduling notification: \(error.localizedDescription)")
+        }
+      }
   }
 
   private func formatTime(_ seconds: TimeInterval) -> String {
